@@ -1,0 +1,47 @@
+[
+  {
+    "instruction": "请用Python写一个计算圆面积的函数",
+    "input": "",
+    "output": "import math\n\ndef calculate_circle_area(radius):\n    \"\"\"计算圆的面积\n\n    Args:\n        radius (float): 圆的半径\n\n    Returns:\n        float: 圆的面积\n    \"\"\"\n    if radius < 0:\n        raise ValueError(\"半径不能为负数\")\n    return math.pi * radius ** 2\n\n# 示例使用\narea = calculate_circle_area(5)\nprint(f\"半径为5的圆的面积是: {area:.2f}\")"
+  },
+  {
+    "instruction": "解释什么是量子计算",
+    "input": "",
+    "output": "量子计算是一种基于量子力学原理的计算方式，与传统计算有根本不同：\n\n## 核心概念\n1. **量子比特 (Qubit)**：可以同时处于0和1的叠加态\n2. **叠加原理**：一个量子系统可以同时存在多个状态\n3. **量子纠缠**：量子比特之间可以建立特殊的关联\n\n## 优势\n- **并行计算**：天然支持大规模并行计算\n- **特定问题优势**：在因子分解、搜索等问题上具有指数级加速\n\n## 应用前景\n- 密码学\n- 药物设计\n- 金融建模\n- 人工智能\n\n量子计算目前仍在发展初期，但未来有望解决传统计算难以处理的复杂问题。"
+  },
+  {
+    "instruction": "将以下中文翻译成英文",
+    "input": "人工智能正在改变我们的生活方式，从智能手机到自动驾驶汽车。",
+    "output": "Artificial intelligence is changing our way of life, from smartphones to autonomous vehicles."
+  },
+  {
+    "instruction": "写一个递归函数实现二叉搜索",
+    "input": "",
+    "output": "def binary_search_recursive(arr, target, left=0, right=None):\n    \"\"\"递归实现的二分查找算法\n\n    Args:\n        arr (list): 已排序的数组\n        target: 要查找的目标值\n        left (int): 左边界索引\n        right (int): 右边界索引\n\n    Returns:\n        int: 目标值的索引，未找到返回-1\n    \"\"\"\n    if right is None:\n        right = len(arr) - 1\n\n    # 基础情况：未找到\n    if left > right:\n        return -1\n\n    mid = (left + right) // 2\n\n    if arr[mid] == target:\n        return mid\n    elif arr[mid] > target:\n        return binary_search_recursive(arr, target, left, mid - 1)\n    else:\n        return binary_search_recursive(arr, target, mid + 1, right)\n\n# 示例使用\nsorted_list = [1, 3, 5, 7, 9, 11, 13, 15]\nresult = binary_search_recursive(sorted_list, 7)\nprint(f\"目标值7的索引: {result}\")"
+  },
+  {
+    "instruction": "解释机器学习中的过拟合现象",
+    "input": "",
+    "output": "**过拟合 (Overfitting)** 是机器学习中一个常见的重要概念。\n\n## 定义\n过拟合是指模型在训练数据上表现很好，但在新的、未见过的数据上表现很差的现象。\n\n## 产生原因\n1. **模型过于复杂**：参数过多，能够记住训练数据的噪声\n2. **训练数据不足**：样本太少，无法代表真实分布\n3. **训练时间过长**：过度训练导致模型过度适应训练数据\n\n## 表现特征\n- 训练准确率很高，验证准确率很低\n- 模型对训练数据几乎完美记忆\n- 泛化能力差\n\n## 解决方法\n1. **正则化**：L1/L2正则化限制模型复杂度\n2. **Dropout**：随机丢弃神经元，减少依赖\n3. **早停**：监控验证集性能，适时停止训练\n4. **数据增强**：增加训练数据多样性\n5. **交叉验证**：更可靠的模型评估\n\n防止过拟合是提高模型泛化能力的关键。"
+  },
+  {
+    "instruction": "创建一个简单的Flask Web应用",
+    "input": "包含一个API端点返回当前时间",
+    "output": "from flask import Flask, jsonify\nfrom datetime import datetime\n\napp = Flask(__name__)\n\n@app.route('/api/time', methods=['GET'])\ndef get_current_time():\n    \"\"\"返回当前时间的API端点\"\"\"\n    current_time = datetime.now()\n    return jsonify({\n        'current_time': current_time.strftime('%Y-%m-%d %H:%M:%S'),\n        'timestamp': int(current_time.timestamp()),\n        'timezone': 'UTC'\n    })\n\n@app.route('/', methods=['GET'])\ndef home():\n    \"\"\"主页\"\"\"\n    return jsonify({\n        'message': 'Hello, this is a simple Flask API!',\n        'endpoints': ['/api/time']\n    })\n\nif __name__ == '__main__':\n    app.run(debug=True, host='0.0.0.0', port=5000)"
+  },
+  {
+    "instruction": "解释HTTP状态码的含义",
+    "input": "200, 404, 500",
+    "output": "**HTTP状态码详解：**\n\n## 2xx 成功状态码\n**200 OK**\n- 表示请求成功\n- 服务器成功返回请求的数据\n- 最常见的成功状态码\n\n## 4xx 客户端错误状态码\n**404 Not Found**\n- 服务器无法找到请求的资源\n- 可能原因：URL错误、资源已删除、路径配置问题\n- 客户端需要检查请求的URL是否正确\n\n## 5xx 服务器错误状态码\n**500 Internal Server Error**\n- 服务器内部错误\n- 服务器遇到了意外情况，无法完成请求\n- 可能原因：代码错误、数据库连接失败、服务器配置问题\n\n## 其他常见状态码\n- **201 Created**：资源创建成功\n- **400 Bad Request**：请求参数错误\n- **401 Unauthorized**：未授权访问\n- **403 Forbidden**：禁止访问\n- **503 Service Unavailable**：服务暂时不可用\n\n理解这些状态码有助于快速定位和解决问题。"
+  },
+  {
+    "instruction": "用Python实现冒泡排序算法",
+    "input": "",
+    "output": "def bubble_sort(arr):\n    \"\"\"冒泡排序算法实现\n\n    Args:\n        arr (list): 待排序的列表\n\n    Returns:\n        list: 排序后的列表\n    \"\"\"\n    n = len(arr)\n\n    # 遍历所有数组元素\n    for i in range(n):\n        # 标记本轮是否发生交换\n        swapped = False\n\n        # 最后i个元素已经就位，不需要比较\n        for j in range(0, n - i - 1):\n            # 如果前面元素大于后面元素，交换它们\n            if arr[j] > arr[j + 1]:\n                arr[j], arr[j + 1] = arr[j + 1], arr[j]\n                swapped = True\n\n        # 如果没有发生交换，说明数组已经有序\n        if not swapped:\n            break\n\n    return arr\n\n# 测试代码\nif __name__ == \"__main__\":\n    test_arr = [64, 34, 25, 12, 22, 11, 90]\n    print(\"原数组:\", test_arr)\n    sorted_arr = bubble_sort(test_arr.copy())\n    print(\"排序后:\", sorted_arr)"
+  },
+  {
+    "instruction": "解释RESTful API的设计原则",
+    "input": "",
+    "output": "**RESTful API设计原则**\n\n## 核心概念\nREST (Representational State Transfer) 是一种软件架构风格，用于设计网络应用。\n\n## 主要原则\n\n### 1. 无状态 (Stateless)\n- 每个请求都包含处理所需的所有信息\n- 服务器不存储客户端的会话状态\n- 便于扩展和负载均衡\n\n### 2. 客户端-服务器架构 (Client-Server)\n- 客户端负责用户界面\n- 服务器负责数据处理和存储\n- 分离关注点，提高灵活性\n\n### 3. 统一接口 (Uniform Interface)\n- **资源标识**：使用URI标识资源\n- **通过表述操作资源**：使用JSON/XML等格式\n- **自描述信息**：消息包含足够信息\n- **超媒体作为应用状态引擎**：HATEOAS\n\n### 4. 可缓存 (Cacheable)\n- 响应数据应该标识是否可缓存\n- 提高性能，减少服务器负载\n\n### 5. 分层系统 (Layered System)\n- 客户端不知道是与最终服务器还是中间服务器通信\n- 便于负载均衡和缓存\n\n## HTTP方法映射\n- **GET**：获取资源\n- **POST**：创建资源\n- **PUT**：更新资源\n- **DELETE**：删除资源\n\n## 设计示例\n```\nGET    /api/users     # 获取用户列表\nPOST   /api/users     # 创建新用户\nGET    /api/users/123 # 获取特定用户\nPUT    /api/users/123 # 更新用户123\nDELETE /api/users/123 # 删除用户123\n```\n\n遵循这些原则可以创建出清晰、可维护、可扩展的API。"
+  }
+]

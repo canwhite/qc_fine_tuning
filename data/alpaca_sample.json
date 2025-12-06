@@ -1,0 +1,27 @@
+[
+  {
+    "instruction": "写一个Python函数计算斐波那契数列",
+    "input": "",
+    "output": "def fibonacci(n):\n    if n <= 1:\n        return n\n    else:\n        return fibonacci(n-1) + fibonacci(n-2)"
+  },
+  {
+    "instruction": "将以下英文翻译成中文",
+    "input": "The weather is really nice today, let's go for a walk.",
+    "output": "今天天气真好，我们出去散步吧。"
+  },
+  {
+    "instruction": "解释机器学习的基本概念",
+    "input": "",
+    "output": "机器学习是人工智能的一个分支，它使计算机能够在没有明确编程的情况下学习和改进。"
+  },
+  {
+    "instruction": "写一封求职信",
+    "input": "申请软件工程师职位，有3年Python经验",
+    "output": "尊敬的招聘经理：\n\n我写信申请贵公司的软件工程师职位...\n\n此致\n敬礼"
+  },
+  {
+    "instruction": "总结以下文章的主要内容",
+    "input": "人工智能正在改变世界。从医疗诊断到自动驾驶，AI技术正在各个领域产生深远影响...",
+    "output": "文章主要讨论了人工智能技术在各行各业的广泛应用和深远影响。"
+  }
+]

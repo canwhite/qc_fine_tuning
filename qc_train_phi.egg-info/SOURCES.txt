@@ -1,0 +1,8 @@
+LICENSE
+README.md
+pyproject.toml
+qc_train_phi.egg-info/PKG-INFO
+qc_train_phi.egg-info/SOURCES.txt
+qc_train_phi.egg-info/dependency_links.txt
+qc_train_phi.egg-info/requires.txt
+qc_train_phi.egg-info/top_level.txt

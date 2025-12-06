@@ -1,0 +1,23 @@
+[
+  {
+    "text": "<|im_start|>user\n用Python写一个计算圆面积的函数<|im_end|>\n<|im_start|>assistant\nimport math\n\ndef calculate_circle_area(radius):\n    if radius < 0:\n        raise ValueError(\"半径不能为负数\")\n    return math.pi * radius ** 2\n\narea = calculate_circle_area(5)\nprint(f\"面积: {area}\")<|im_end|>"
+  },
+  {
+    "text": "<|im_start|>user\n解释什么是量子计算<|im_end|>\n<|im_start|>assistant\n量子计算是一种基于量子力学原理的计算方式。\n\n核心特点：\n1. 量子比特：可以同时处于0和1的叠加态\n2. 量子纠缠：粒子间的特殊关联\n3. 量子并行：天然支持大规模并行计算\n\n应用领域：密码学、药物设计、人工智能等。<|im_end|>"
+  },
+  {
+    "text": "<|im_start|>user\n将'人工智能改变世界'翻译成英文<|im_end|>\n<|im_start|>assistant\nArtificial intelligence is changing the world.<|im_end|>"
+  },
+  {
+    "text": "<|im_start|>user\n写一个冒泡排序算法<|im_end|>\n<|im_start|>assistant\ndef bubble_sort(arr):\n    n = len(arr)\n    for i in range(n):\n        for j in range(0, n-i-1):\n            if arr[j] > arr[j+1]:\n                arr[j], arr[j+1] = arr[j+1], arr[j]\n    return arr\n\n# 测试\nprint(bubble_sort([64, 34, 25, 12, 22, 11, 90]))<|im_end|>"
+  },
+  {
+    "text": "<|im_start|>user\n什么是机器学习？<|im_end|>\n<|im_start|>assistant\n机器学习是人工智能的一个分支，让计算机能够从数据中学习规律，而无需明确编程。\n\n主要类型：\n1. 监督学习：从标注数据学习\n2. 无监督学习：从无标注数据发现模式\n3. 强化学习：通过奖励机制学习\n\n应用：图像识别、自然语言处理、推荐系统等。<|im_end|>"
+  },
+  {
+    "text": "<|im_start|>user\n计算：123 + 456 = ?<|im_end|>\n<|im_start|>assistant\n123 + 456 = 579<|im_end|>"
+  },
+  {
+    "text": "<|im_start|>user\n写一个简单的Flask应用<|im_end|>\n<|im_start|>assistant\nfrom flask import Flask\n\napp = Flask(__name__)\n\n@app.route('/')\ndef hello():\n    return 'Hello, World!'\n\nif __name__ == '__main__':\n    app.run(debug=True)<|im_end|>"
+  }
+]

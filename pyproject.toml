@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qc-train-phi"
+version = "0.1.0"
+description = "Phi fine-tune on Mac M2/M3/M4 with stable MPS"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "datasets>=2.14.0",
+    "transformers>=4.46.0",
+    "peft>=0.18.0",
+    "trl>=0.25.1",
+    "black>=24.0.0",
+    "ruff>=0.7.0",
+    "isort>=5.0.0",
+]
+
+# Mac Apple Silicon 强制锁最稳 MPS 版
+[project.optional-dependencies]
+mps = [
+    "torch==2.4.1; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "torchvision==0.19.1; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "torchaudio==2.4.1; sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
+cpu = [
+    "torch; sys_platform != 'darwin' or platform_machine != 'arm64'",
+    "torchvision; sys_platform != 'darwin' or platform_machine != 'arm64'",
+    "torchaudio; sys_platform != 'darwin' or platform_machine != 'arm64'",
+]
+
+# 告诉 setuptools 忽略数据文件夹
+[tool.setuptools]
+packages = []  # 空列表，不包含任何包
+include-package-data = false
