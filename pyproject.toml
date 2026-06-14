@@ -21,14 +21,14 @@ dependencies = [
 # Mac Apple Silicon 强制锁最稳 MPS 版
 [project.optional-dependencies]
 mps = [
-    "torch==2.4.1; sys_platform == 'darwin' and platform_machine == 'arm64'",
-    "torchvision==0.19.1; sys_platform == 'darwin' and platform_machine == 'arm64'",
-    "torchaudio==2.4.1; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "torch>=2.5.0; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "torchvision>=0.20.0; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "torchaudio>=2.5.0; sys_platform == 'darwin' and platform_machine == 'arm64'",
 ]
 cpu = [
-    "torch; sys_platform != 'darwin' or platform_machine != 'arm64'",
-    "torchvision; sys_platform != 'darwin' or platform_machine != 'arm64'",
-    "torchaudio; sys_platform != 'darwin' or platform_machine != 'arm64'",
+    "torch>=2.5.0; sys_platform != 'darwin' or platform_machine != 'arm64'",
+    "torchvision>=0.20.0; sys_platform != 'darwin' or platform_machine != 'arm64'",
+    "torchaudio>=2.5.0; sys_platform != 'darwin' or platform_machine != 'arm64'",
 ]
 
 # 告诉 setuptools 忽略数据文件夹

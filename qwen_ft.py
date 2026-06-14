@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore")
 
 import torch
 from datasets import Dataset
-from peft import LoraConfig
+from peft import LoraConfig #parameter efficient
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 from trl import SFTTrainer
 
@@ -53,11 +53,16 @@ def load_qwen_model(model_name="Qwen/Qwen2.5-0.5B-Instruct"):
     try:
         # 加载tokenizer
         tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        # 分词器：
+        # 玩具火车的“节数”就是一句话被切成的 token 数量，
+        # 短的那列火车后面挂的“空车厢”就是 pad_token（如 [PAD]
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
+        # 在序列的右侧添加padding（默认是左侧）
         tokenizer.padding_side = "right"
 
-        # 加载模型
+        # 加载模型，微调一般是用这个AutoModelForCausalLM
+        # 另外常用的AutoModel没任务头的，以及AutoModelForSequenceClassification，加了一个线性分类头
         model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
 
         # 移动到MPS
