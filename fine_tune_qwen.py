@@ -15,8 +15,8 @@ warnings.filterwarnings("ignore")
 
 import torch
 from datasets import Dataset
-from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 from peft import LoraConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 from trl import SFTTrainer
 
 # 设置M2 Air优化环境变量
@@ -171,44 +171,52 @@ def create_training_args():
 
     return TrainingArguments(
         output_dir=output_dir,
-        overwrite_output_dir=True,
-        # 学习率配置
-        learning_rate=5e-5,  # 提高学习率
-        lr_scheduler_type="cosine",
-        warmup_ratio=0.1,
-        # 训练配置
-        num_train_epochs=5,  # 增加训练轮数
-        per_device_train_batch_size=1,
-        per_device_eval_batch_size=1,
-        gradient_accumulation_steps=4,  # 减少梯度累积
-        # 评估配置
+        # ═════════════════════════════════════════════════════════
+        # ★★★ 核心参数：直接决定训练成败
+        # ═════════════════════════════════════════════════════════
+        learning_rate=5e-5,  # 学习率：步子大小
+        num_train_epochs=5,  # 训练轮数：走几圈
+        per_device_train_batch_size=1,  # 批大小：一次喂多少
+        gradient_accumulation_steps=4,  # 梯度累积：显存不够时用
+        per_device_eval_batch_size=1,  # 评估批大小
+        # ═════════════════════════════════════════════════════════
+        # ★★ 重要参数：影响训练稳定性
+        # ═════════════════════════════════════════════════════════
+        lr_scheduler_type="cosine",  # 学习率调度：cosine慢慢减小
+        warmup_ratio=0.1,  # 预热：开头学习率慢慢升
+        max_grad_norm=1.0,  # 梯度裁剪：防止步子太大
+        # 保存和评估
         do_eval=True,
         eval_strategy="steps",
-        eval_steps=2,
-        # 保存配置
+        eval_steps=50,  # 每50步评估（原来是2，太频繁）
         save_strategy="steps",
-        save_steps=2,
-        save_total_limit=3,
-        load_best_model_at_end=True,
-        # 日志配置
-        logging_steps=1,
+        save_steps=50,  # 每50步保存（原来是2，太频繁）
+        save_total_limit=3,  # 最多保留3个checkpoint
+        load_best_model_at_end=True,  # 结束时加载最优模型
+        # ═════════════════════════════════════════════════════════
+        # ○ 辅助参数：有默认值，按需调整
+        # ═════════════════════════════════════════════════════════
+        weight_decay=0.01,  # 权重衰减：防止过拟合
+        # ═════════════════════════════════════════════════════════
+        # ○ 默认即可：通常不需要改
+        # ═════════════════════════════════════════════════════════
+        optim="adamw_torch",  # 优化器
+        adam_beta1=0.9,  # Adam参数
+        adam_beta2=0.999,  # Adam参数
+        adam_epsilon=1e-8,  # Adam参数
+        # 日志
+        logging_steps=10,  # 每10步打印日志
         logging_strategy="steps",
-        # 优化配置
-        optim="adamw_torch",
-        weight_decay=0.01,
-        adam_beta1=0.9,
-        adam_beta2=0.999,
-        adam_epsilon=1e-8,
-        max_grad_norm=1.0,  # 梯度裁剪
-        # MPS优化
-        dataloader_pin_memory=False,
+        # 其他
+        overwrite_output_dir=True,
+        dataloader_pin_memory=False,  # MPS优化
         remove_unused_columns=False,  # 保留text列
-        # 其他配置
-        seed=42,
-        report_to="none",  # 禁用wandb等报告
+        seed=42,  # 随机种子
+        report_to="none",  # 禁用wandb
     )
 
 
+# 从最终阶段开始
 def main():
     """主训练函数"""
     setup_logging()
