@@ -16,14 +16,16 @@ warnings.filterwarnings("ignore")
 import torch
 from datasets import Dataset
 from peft import LoraConfig #parameter efficient
-from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
-from trl import SFTTrainer
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments # some tools for sft
+from trl import SFTTrainer # trainer
 
 # 设置M2 Air优化环境变量
 os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
 os.environ["OMP_NUM_THREADS"] = "1"
 
 # 设置随机种子
+# 训练中涉及随机性的部分，如数据分割、参数初始化等，
+# 设置固定的随机种子可以确保每次运行得到相同的结果，方便调试和复现。
 torch.random.manual_seed(42)
 
 logger = logging.getLogger(__name__)
@@ -38,6 +40,7 @@ def setup_logging():
     )
 
 
+# loadmodel
 def load_qwen_model(model_name="Qwen/Qwen2.5-0.5B-Instruct"):
     """加载Qwen2.5模型"""
     logger.info(f"开始加载Qwen2.5模型: {model_name}")
@@ -66,15 +69,18 @@ def load_qwen_model(model_name="Qwen/Qwen2.5-0.5B-Instruct"):
         model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
 
         # 移动到MPS
+        # 这里的backends指的是GPU后端，MPS是苹果的GPU后端，类似于CUDA（NVIDIA）和ROCm（AMD）
         if torch.backends.mps.is_available():
             model = model.to("mps")
             logger.info("✅ 模型已移动到MPS")
         else:
             logger.info("💻 使用CPU")
 
+        # 模型参数统计，就是前向传播时需要计算的参数数量，通常以百万（M）或十亿（B）为单位  
         total_params = sum(p.numel() for p in model.parameters())
         logger.info(f"模型总参数: {total_params:,}")
 
+        # 最后返回model和tokenizer，后续训练和生成都需要用到它们
         return model, tokenizer
 
     except Exception as e:
@@ -82,8 +88,19 @@ def load_qwen_model(model_name="Qwen/Qwen2.5-0.5B-Instruct"):
         raise
 
 
+# 准备数据集的基本函数
 def create_training_data():
     """创建训练数据 - 使用更简单的格式"""
+    #chatML格式的训练数据，直接用text字段存储完整的对话文本，包含用户和助手的角色标记
+    """
+    问答对儿：                                                                                                                                  
+        <|im_start|>user
+        问题                                                                                                                             
+        <|im_end|>
+        <|im_start|>assistant                                                                                                            
+        回答                                                      
+        <|im_end|>
+    """
     training_data = [
         # 简单的对话格式
         {
@@ -113,6 +130,14 @@ def create_training_data():
     os.makedirs("./data", exist_ok=True)
     data_path = "./data/training_data.json"
     with open(data_path, "w", encoding="utf-8") as f:
+        """
+        # 序列化到字符串
+        json_str = json.dumps(training_data, ensure_ascii=False, indent=2)                                                               
+                                                                    
+        # 字符串转回Python对象                                                                                                           
+        data = json.loads(json_str)
+        """
+        #dumps是转成字符串，这里是？dump直接写入文件，ensure_ascii=False保持中文，indent=2格式化输出
         json.dump(training_data, f, ensure_ascii=False, indent=2)
 
     logger.info(f"已创建训练数据: {data_path}")
@@ -131,9 +156,10 @@ def prepare_dataset(tokenizer):
     # 创建数据集
     dataset = Dataset.from_list(data)
 
-    # 分割数据集
+    # 分割数据集为训练集和验证集，20%作为验证集，如果数据量太小就不分割了
     if len(dataset) > 2:
         split_dataset = dataset.train_test_split(test_size=0.2, seed=42)
+        #分割好的是两个map，train和test，分别对应训练集和验证集
         train_dataset = split_dataset["train"]
         eval_dataset = split_dataset["test"]
     else:
@@ -152,13 +178,22 @@ def prepare_dataset(tokenizer):
 
 def create_lora_config():
     """创建LoRA配置"""
+    """关键指标start★★★ LoRA核心参数 ★★★
+    r= 16,         # 最关键指标，增加r值，中间秩更大，理论上能捕捉更多信息，但也更重量
+    lora_alpha=32, # 这个是缩放因子，通常设置为r的倍数，output = W · x + (α/r) · ΔW · x
+                   # ΔW = B·A，B 和 A 是低秩矩阵，参数量小得多， 但通过缩放 α/r 放大后，效果显著。
+    """
     return LoraConfig(
-        r=16,  # 增加r值
-        lora_alpha=32,
-        lora_dropout=0.1,
-        bias="none",
-        task_type="CAUSAL_LM",
-        target_modules=[
+        #key metrics
+        r=16, 
+        lora_alpha=32, 
+
+        #others
+        lora_dropout=0.1, #随机丢弃随机丢弃 10% 的 LoRA 路径，防止过拟合，和relu实现的作用很想，但不是完全一样，
+        #relu是丢弃部分神经元的输出，而lora_dropout是丢弃部分LoRA路径的输出
+        bias="none", # 不训练偏置参数，保持原模型的偏置不变，减少训练参数量
+        task_type="CAUSAL_LM", # 任务类型，CAUSAL_LM表示因果语言模型，适用于文本生成任务
+        target_modules=[ #指定把 LoRA 应用到哪些层。列出的都是 Attention 和 FFN 的投影层 
             "q_proj",
             "k_proj",
             "v_proj",
@@ -182,8 +217,9 @@ def create_training_args():
         learning_rate=5e-5,  # 学习率：步子大小
         num_train_epochs=5,  # 训练轮数：走几圈
         per_device_train_batch_size=1,  # 批大小：一次喂多少
-        gradient_accumulation_steps=4,  # 梯度累积：显存不够时用
+        gradient_accumulation_steps=4,  # 梯度累积：显存不够时用，将几个batch的梯度累积起来再更新一次，相当于在原有的批次上再分批
         per_device_eval_batch_size=1,  # 评估批大小
+
         # ═════════════════════════════════════════════════════════
         # ★★ 重要参数：影响训练稳定性
         # ═════════════════════════════════════════════════════════
@@ -249,14 +285,14 @@ def main():
             return example["text"]
 
         trainer = SFTTrainer(
-            model=model,
-            args=training_args,
-            peft_config=peft_config,
-            train_dataset=train_dataset,
-            eval_dataset=eval_dataset,
+            model=model, # model
+            args=training_args, #训练参数
+            peft_config=peft_config, #lora参数
+            train_dataset=train_dataset, # 训练数据
+            eval_dataset=eval_dataset, #评估数据
             # 关键参数
-            formatting_func=formatting_func,
-            processing_class=tokenizer,
+            formatting_func=formatting_func, # 取值example["text"]，直接返回文本，不需要额外处理，SFTTrainer会自动调用tokenizer进行编码
+            processing_class=tokenizer, #分词器
         )
 
         # 5. 显示训练信息
@@ -273,7 +309,7 @@ def main():
         # 6. 开始训练
         logger.info("步骤5: 开始训练...")
         start_time = time.time()
-
+        # 直接调用train函数就ok，这个确实简单
         train_result = trainer.train()
 
         end_time = time.time()
