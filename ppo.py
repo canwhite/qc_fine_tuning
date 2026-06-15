@@ -1,7 +1,7 @@
 """
 PPO + RLHF 完整训练示例（使用真实 Reward Model）
 ================================================
-这个脚本展示如何使用 PPO 算法进行 RLHF 训练
+这个脚本展示如何使用 PPO 算法进行 RLHF 训练，这里HF的意思是 from Human Feedback
 使用 HuggingFace 上的真实 Reward Model 替代模拟
 
 核心概念：
@@ -35,9 +35,7 @@ from trl import (
 
 class RealRewardModel:
     """
-    真实的 Reward Model
-
-    从 HuggingFace 加载预训练的奖励模型
+    真实的 Reward Model，从 HuggingFace 加载预训练的奖励模型
     输入: 问题 + 回答
     输出: 标量奖励分数（越高越好）
 

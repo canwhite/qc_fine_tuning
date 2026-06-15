@@ -65,7 +65,8 @@ def load_qwen_model(model_name="Qwen/Qwen2.5-0.5B-Instruct"):
         tokenizer.padding_side = "right"
 
         # 加载模型，微调一般是用这个AutoModelForCausalLM
-        # 另外常用的AutoModel没任务头的，以及AutoModelForSequenceClassification，加了一个线性分类头
+        # 另外常用的AutoModel没任务头的，
+        # 以及AutoModelForSequenceClassification，加了一个线性分类头，这个ppo和dpo的时候用
         model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
 
         # 移动到MPS

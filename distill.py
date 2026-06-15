@@ -21,7 +21,6 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 # 第一部分：温度缩放 Softmax（蒸馏核心）
 # ============================================================
 
-
 def temperature_softmax(logits: torch.Tensor, temperature: float = 1.0) -> torch.Tensor:
     """
     带温度的 Softmax
@@ -37,35 +36,6 @@ def temperature_softmax(logits: torch.Tensor, temperature: float = 1.0) -> torch
         概率分布 [batch_size, vocab_size]
     """
     return F.softmax(logits / temperature, dim=-1)
-
-
-def demo_temperature_effect():
-    """
-    演示温度对概率分布的影响
-    """
-    print("=" * 60)
-    print("温度对 Softmax 的影响演示")
-    print("=" * 60)
-
-    # 模拟 logits（5个词的得分）
-    logits = torch.tensor([2.0, 1.0, 0.1, -1.0, -2.0])
-
-    temperatures = [0.5, 1.0, 2.0, 5.0, 10.0]
-
-    print("\n原始 logits:", logits.tolist())
-    print("\n不同温度下的概率分布：")
-    print("-" * 60)
-
-    for T in temperatures:
-        probs = temperature_softmax(logits, T)
-        print(f"T = {T:4.1f}: {probs.tolist()}")
-        print(f"         最大概率: {probs.max().item():.4f}, 熵: {-sum(probs * torch.log(probs + 1e-10)).item():.4f}")
-        print()
-
-    print("观察：")
-    print("  - T 越小，分布越尖锐（最大概率越高，熵越低）")
-    print("  - T 越大，分布越平滑（概率差距缩小，熵越高）")
-    print("  - 蒸馏通常用 T > 1，让暗知识（次要信息）更容易学习")
 
 
 # ============================================================
@@ -301,57 +271,8 @@ def main():
     print(f"\n学生模型已保存到: {save_path}")
 
 
-# ============================================================
-# 附录：蒸馏 vs 传统训练对比
-# ============================================================
-
-
-def explain_distillation_vs_traditional():
-    """
-    蒸馏 vs 传统训练的对比
-    """
-    print("""
-    ╔══════════════════════════════════════════════════════════╗
-    ║            蒸馏 vs 传统训练 vs RLHF                       ║
-    ╠══════════════════════════════════════════════════════════╣
-    ║                                                          ║
-    ║  传统训练：                                               ║
-    ║    数据 ──→ 硬标签 ──→ 模型学习                           ║
-    ║    信息：只有"正确答案"                                   ║
-    ║                                                          ║
-    ║  蒸馏：                                                   ║
-    ║    教师模型 ──→ 软标签 ──→ 学生模型学习                    ║
-    ║    信息：正确答案 + 类间关系（暗知识）                      ║
-    ║                                                          ║
-    ║  RLHF：                                                   ║
-    ║    Policy ──→ 生成 ──→ Reward Model 打分 ──→ 调整         ║
-    ║    信息：只有"好坏分数"，需要探索                          ║
-    ║                                                          ║
-    ╠══════════════════════════════════════════════════════════╣
-    ║  关键区别：                                               ║
-    ║                                                          ║
-    ║  1. 信号密度                                              ║
-    ║     - 蒸馏：每个 token 都有密集信号（概率分布）             ║
-    ║     - RLHF：整个回答只有一个稀疏信号（标量分数）            ║
-    ║                                                          ║
-    ║  2. 学习方式                                              ║
-    ║     - 蒸馏：直接模仿（告诉答案）                           ║
-    ║     - RLHF：试错探索（告诉好坏）                           ║
-    ║                                                          ║
-    ║  3. 样本效率                                              ║
-    ║     - 蒸馏：高（直接学）                                   ║
-    ║     - RLHF：低（需要大量采样探索）                         ║
-    ║                                                          ║
-    ╚══════════════════════════════════════════════════════════╝
-    """)
-
 
 if __name__ == "__main__":
-    # 1. 演示温度效果
-    demo_temperature_effect()
-
-    # 2. 打印对比说明
-    explain_distillation_vs_traditional()
 
     # 3. 运行蒸馏训练
     main()
