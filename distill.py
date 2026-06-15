@@ -35,6 +35,7 @@ def temperature_softmax(logits: torch.Tensor, temperature: float = 1.0) -> torch
     Returns:
         概率分布 [batch_size, vocab_size]
     """
+    #这里是将温度当作调节器，控制教师输出的概率分布的平滑程度
     return F.softmax(logits / temperature, dim=-1)
 
 
@@ -81,15 +82,25 @@ class DistillationLoss(nn.Module):
         Returns:
             total_loss, soft_loss, hard_loss
         """
+        
         # 忽略 padding token
         active_mask = labels != -100
 
         # 1. 软标签损失（KL 散度）
-        # 学生要模仿教师的"思考方式"
+        # 学生要模仿教师的"思考方式",
         soft_targets = temperature_softmax(teacher_logits, self.temperature)
+        # 学生的数据在这里相当于Q，  D_KL(P||Q) = 教师概率 × log(教师概率 / 学生概率)  
+        # 所以学生数据需要softmax化
         soft_student = F.log_softmax(student_logits / self.temperature, dim=-1)
 
         # KL 散度损失，乘以 T^2 保持梯度量级一致
+        # D_KL(P||Q) = 教师概率 × log(教师概率 / 学生概率)    = 平均惊讶 - 真实惊讶
+        """
+              D_KL = sum(P * log P) - sum(P * log Q)
+                = -熵 - (-交叉熵)                                                                                                           
+                = 交叉熵 - 熵
+                = 平均惊讶 - 真实惊讶   
+        """
         soft_loss = F.kl_div(
             soft_student,
             soft_targets,
@@ -101,7 +112,7 @@ class DistillationLoss(nn.Module):
         soft_loss = (soft_loss * active_mask).sum() / active_mask.sum()
 
         # 2. 硬标签损失（交叉熵）
-        # 学生也要学会正确答案
+        # 学生也要学会正确答案，只针对学生
         hard_loss = self.ce_loss(
             student_logits.view(-1, student_logits.size(-1)),
             labels.view(-1),
@@ -131,6 +142,7 @@ def main():
     # teacher = "Qwen/Qwen2.5-7B-Instruct"    # 7B 教师
     # student = "Qwen/Qwen2.5-0.5B-Instruct"  # 0.5B 学生
 
+    # 判断设备的这个方法还挺好用的
     device = "mps" if torch.backends.mps.is_available() else "cpu"
     print(f"\n设备: {device}")
 
@@ -149,11 +161,12 @@ def main():
         teacher_model_name,
         trust_remote_code=True,
         torch_dtype=torch.float16,
-    ).to(device)
-    teacher.eval()  # 冻结
+    ).to(device) #注意from_pretrained在加载的时候可以使用to制定设备
+    teacher.eval()  # 冻结，所谓冻结就是把模型设置为评估模型，不计算梯度
     for param in teacher.parameters():
         param.requires_grad = False
     print(f"   教师模型: {teacher_model_name} (冻结)")
+
 
     # 学生（会更新）
     student = AutoModelForCausalLM.from_pretrained(
@@ -161,7 +174,7 @@ def main():
         trust_remote_code=True,
         torch_dtype=torch.float16,
     ).to(device)
-    student.train()
+    student.train() # 将学生设置为train模式，启用梯度计算
     print(f"   学生模型: {student_model_name} (训练中)")
 
     # ---------- 准备数据 ----------
@@ -178,14 +191,15 @@ def main():
     # Tokenize
     encodings = tokenizer(
         training_texts,
-        padding=True,
-        truncation=True,
-        max_length=64,
-        return_tensors="pt",
+        padding=True, # 需要padding
+        truncation=True,# 需要截断
+        max_length=64, # 限制输入长度，避免内存过大
+        return_tensors="pt", # 返回PyTorch张量
     )
 
     # 准备标签（对于语言模型，标签 = 输入）
     input_ids = encodings["input_ids"].to(device)
+    # 这个attention_mask是用来标记哪些位置是padding的，计算损失时会忽略这些位置
     attention_mask = encodings["attention_mask"].to(device)
     labels = input_ids.clone()
     # 把 padding 位置的标签设为 -100（忽略）
@@ -198,6 +212,7 @@ def main():
     print("\n[4/5] 初始化训练组件...")
 
     distill_loss = DistillationLoss(temperature=2.0, alpha=0.7)
+    #通过动量训练吗？AdamW是一个常用的优化器，适合训练语言模型
     optimizer = torch.optim.AdamW(student.parameters(), lr=1e-5)
 
     print(f"   温度: {distill_loss.temperature}")
